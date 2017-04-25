@@ -1,5 +1,5 @@
 Name:                yesod-auth-fb
-Version:             1.8.0
+Version:             1.8.1
 Synopsis:            Authentication backend for Yesod using Facebook.
 Homepage:            https://github.com/psibi/yesod-auth-fb
 License:             BSD3

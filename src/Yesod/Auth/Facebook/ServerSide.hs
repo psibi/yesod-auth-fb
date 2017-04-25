@@ -113,9 +113,7 @@ authFacebook perms = AuthPlugin "fb" dispatch login
     login tm = do
         ur <- getUrlRender
         redirectUrl <- handlerToWidget $ getRedirectUrl (ur . tm)
-        [whamlet|$newline never
-<p>
-    <a href="#{redirectUrl}">_{Msg.Facebook}
+        [whamlet|<a href="#{redirectUrl}">_{Msg.Facebook}
 |]
 
 
