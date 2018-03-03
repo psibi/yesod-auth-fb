@@ -1,3 +1,5 @@
+{-#LANGUAGE RankNTypes#-}
+
 -- | @yesod-auth@ authentication plugin using Facebook's
 -- client-side authentication flow.  You may see a demo at
 -- <https://github.com/meteficha/yesod-auth-fb/blob/master/demo/clientside.hs>.
@@ -43,7 +45,8 @@ import Network.Wai (queryString)
 import Text.Julius (JavascriptUrl, julius, rawJS)
 import Yesod.Auth
 import Yesod.Core
-import qualified Control.Exception.Lifted as E
+import qualified Control.Monad.Trans.Resource as R
+import qualified UnliftIO.Exception as E
 import qualified Data.Aeson as A
 import qualified Data.Aeson.Types as A
 import qualified Data.Text as T
@@ -358,37 +361,38 @@ channelFileContent = toContent val
 -- authentication flow.
 --
 -- You /MUST/ use 'facebookJSSDK' as its documentation states.
+
 authFacebookClientSide :: YesodAuthFbClientSide site
                        => AuthPlugin site
 authFacebookClientSide =
     AuthPlugin "fbcs" dispatch login
   where
     dispatch :: YesodAuthFbClientSide site =>
-                Text -> [Text] -> HandlerT Auth (HandlerT site IO) TypedContent
+                Text -> [Text] -> AuthHandler site TypedContent
     -- Login route used when successfully logging in.  Called via
     -- AJAX by JavaScript code on 'facebookJSSDK'.
     dispatch "GET" ["login"] = do
-      y <- lift getYesod
-      when (redirectToReferer y) (lift setUltDestReferer)
-      etoken <- lift getUserAccessTokenFromFbCookie
+      y <- getYesod
+      when (redirectToReferer y) setUltDestReferer
+      etoken <- getUserAccessTokenFromFbCookie
       case etoken of
-        Right token -> lift $ setCredsRedirect (createCreds token)
+        Right token -> setCredsRedirect (createCreds token)
         Left msg -> fail msg
 
     -- Login routes used to forcefully require the user to login.
     dispatch "GET" ["login", "go"] = dispatch "GET" ["login", "go", ""]
     dispatch "GET" ["login", "go", perms] = do
       -- Redirect the user to the server-side flow login url.
-      y  <- lift getYesod
+      y  <- getYesod
       ur <- getUrlRender
-      when (redirectToReferer y) (lift setUltDestReferer)
-      let redirectTo = ur $ fbcsR ["login", "back"]
+      tm <- getRouteToParent
+      when (redirectToReferer y) setUltDestReferer
+      let redirectTo = ur $ tm $ fbcsR ["login", "back"]
           uncommas "" = []
           uncommas xs = case break (== ',') xs of
                           (x', ',':xs') -> x' : uncommas xs'
                           (x', _)       -> [x']
-      url <- lift $
-             YF.runYesodFbT $
+      url <- YF.runYesodFbT $
              FB.getUserAccessTokenStep1 redirectTo $
                map fromString $ uncommas $ T.unpack perms
       redirect url
@@ -400,13 +404,13 @@ authFacebookClientSide =
       -- flimsy and sometimes the user landed on a blank page due
       -- to race conditions.
       ur <- getUrlRender
+      tm <- getRouteToParent 
       query <- queryString <$> waiRequest
-      let proceedUrl = ur $ fbcsR ["login", "back"]
+      let proceedUrl = ur $ tm $ fbcsR ["login", "back"]
           query' = [(a,b) | (a, Just b) <- query]
-      token <- lift $
-               YF.runYesodFbT $
+      token <- YF.runYesodFbT $
                FB.getUserAccessTokenStep2 proceedUrl query'
-      lift $ setCredsRedirect (createCreds token)
+      setCredsRedirect (createCreds token)
 
     -- Everything else gives 404
     dispatch _ _ = notFound
@@ -494,14 +498,15 @@ signedRequestCookieName = T.append "fbsr_" . FB.appId
 -- 'extractCredsAccessToken'.
 getUserAccessTokenFromFbCookie ::
   YesodAuthFbClientSide site =>
-  HandlerT site IO (Either String FB.UserAccessToken)
+  AuthHandler site (Either String FB.UserAccessToken)
 getUserAccessTokenFromFbCookie =
   runErrorT $ do
     creds <- lift YF.getFbCredentials
     unparsed <- toErrorT "cookie not found" $ lookupCookie (signedRequestCookieName creds)
     A.Object parsed <- toErrorT "cannot parse signed request" $
-                       YF.runYesodFbT $
-                       FB.parseSignedRequest (TE.encodeUtf8 unparsed)
+                       undefined
+                       -- YF.runYesodFbT $
+                       -- FB.parseSignedRequest (TE.encodeUtf8 unparsed)
     case (flip A.parseEither () $ const $
           (,,,) <$> parsed A..:? "code"
                 <*> parsed A..:? "user_id"
@@ -523,11 +528,12 @@ getUserAccessTokenFromFbCookie =
             let fbErrorMsg :: FB.FacebookException -> String
                 fbErrorMsg exc = "getUserAccessTokenFromFbCookie: getUserAccessTokenStep2 " ++
                                  "failed with " ++ show exc
-            token <- ErrorT $
-                     fmap (either (Left . fbErrorMsg) Right) $
-                     E.try $
-                     YF.runYesodFbT $
-                     FB.getUserAccessTokenStep2 "" [("code", code)]
+            token <- undefined
+            -- token <- ErrorT $
+            --          fmap (either (Left . fbErrorMsg) Right) $
+            --          E.try $
+            --          YF.runYesodFbT $
+            --          FB.getUserAccessTokenStep2 "" [("code", code)]
             case token of
               FB.UserAccessToken userId data_ exptime -> lift $ do
                 -- Save it for later.
