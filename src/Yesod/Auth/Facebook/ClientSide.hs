@@ -392,7 +392,7 @@ authFacebookClientSide =
           uncommas xs = case break (== ',') xs of
                           (x', ',':xs') -> x' : uncommas xs'
                           (x', _)       -> [x']
-      url <- YF.runYesodFbT $
+      url <- liftSubHandler $ YF.runYesodFbT $
              FB.getUserAccessTokenStep1 redirectTo $
                map fromString $ uncommas $ T.unpack perms
       redirect url
@@ -408,8 +408,8 @@ authFacebookClientSide =
       query <- queryString <$> waiRequest
       let proceedUrl = ur $ tm $ fbcsR ["login", "back"]
           query' = [(a,b) | (a, Just b) <- query]
-      token <- YF.runYesodFbT $
-               FB.getUserAccessTokenStep2 proceedUrl query'
+      token <- liftSubHandler $ YF.runYesodFbT $
+               (FB.getUserAccessTokenStep2 proceedUrl query')
       setCredsRedirect (createCreds token)
 
     -- Everything else gives 404
@@ -504,9 +504,9 @@ getUserAccessTokenFromFbCookie =
     creds <- lift YF.getFbCredentials
     unparsed <- toErrorT "cookie not found" $ lookupCookie (signedRequestCookieName creds)
     A.Object parsed <- toErrorT "cannot parse signed request" $
-                       undefined
-                       -- YF.runYesodFbT $
-                       -- FB.parseSignedRequest (TE.encodeUtf8 unparsed)
+                       liftSubHandler $
+                       YF.runYesodFbT $
+                       FB.parseSignedRequest (TE.encodeUtf8 unparsed)
     case (flip A.parseEither () $ const $
           (,,,) <$> parsed A..:? "code"
                 <*> parsed A..:? "user_id"
@@ -528,12 +528,12 @@ getUserAccessTokenFromFbCookie =
             let fbErrorMsg :: FB.FacebookException -> String
                 fbErrorMsg exc = "getUserAccessTokenFromFbCookie: getUserAccessTokenStep2 " ++
                                  "failed with " ++ show exc
-            token <- undefined
-            -- token <- ErrorT $
-            --          fmap (either (Left . fbErrorMsg) Right) $
-            --          E.try $
-            --          YF.runYesodFbT $
-            --          FB.getUserAccessTokenStep2 "" [("code", code)]
+            token <- ErrorT $
+                     fmap (either (Left . fbErrorMsg) Right) $
+                     E.try $
+                     liftSubHandler $
+                     YF.runYesodFbT $
+                     FB.getUserAccessTokenStep2 "" [("code", code)]
             case token of
               FB.UserAccessToken userId data_ exptime -> lift $ do
                 -- Save it for later.
