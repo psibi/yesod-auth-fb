@@ -4,3 +4,84 @@ yesod-auth-fb
 [![Build Status](https://travis-ci.org/psibi/yesod-auth-fb.svg?branch=master)](https://travis-ci.org/psibi/yesod-auth-fb)
 
 Authentication backend for Yesod using Facebook
+
+# Demo
+
+Sample code showing Facebook authentication in action:
+
+```
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE QuasiQuotes #-}
+{-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE OverloadedStrings #-}
+
+import Data.Text (Text)
+import Network.HTTP.Client.Conduit (newManager, Manager)
+import Yesod
+import Yesod.Auth
+import Yesod.Facebook
+import Yesod.Auth.Facebook.ServerSide
+import Facebook (Credentials(..))
+import Network.HTTP.Client.TLS (tlsManagerSettings)
+
+fbclientId :: Text
+fbclientId = "sample_fb_client_id"
+
+fbclientSecret :: Text
+fbclientSecret = "sample_fb_secret"
+
+data App = App
+  { httpManager :: Manager
+  }
+
+mkYesod
+  "App"
+  [parseRoutes|
+/ HomeR GET
+/auth AuthR Auth getAuth
+|]
+
+instance Yesod App where
+  approot = ApprootStatic "http://localhost:3000"
+
+instance YesodFacebook App where
+  fbCredentials _ = Credentials "yesod" fbclientId fbclientSecret
+  fbHttpManager = httpManager
+
+instance YesodAuth App where
+  type AuthId App = Text
+  getAuthId = return . Just . credsIdent
+  loginDest _ = HomeR
+  logoutDest _ = HomeR
+  authPlugins _ = [authFacebook ["user_about_me", "email"]]
+  authHttpManager = do
+    app <- getYesod
+    return $ httpManager app
+  -- The default maybeAuthId assumes a Persistent database. We're going for a
+  -- simpler AuthId, so we'll just do a direct lookup in the session.
+  maybeAuthId = lookupSession "_ID"
+
+instance RenderMessage App FormMessage where
+  renderMessage _ _ = defaultFormMessage
+
+getHomeR :: Handler Html
+getHomeR = do
+  maid <- maybeAuthId
+  defaultLayout
+    [whamlet|
+            <p>Your current auth ID: #{show maid}
+            $maybe _ <- maid
+                <p>
+                    <a href=@{AuthR LogoutR}>Logout
+                    <a href=@{AuthR facebookLogout}>Facebook logout
+            $nothing
+                <p>
+                    <a href=@{AuthR LoginR}>Go to the login page
+        |]
+
+main :: IO ()
+main = do
+  man <- newManager
+  warp 3000 $ App man
+```
