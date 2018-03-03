@@ -1,3 +1,5 @@
+{-#LANGUAGE RankNTypes#-}
+
 -- | @yesod-auth@ authentication plugin using Facebook's
 -- server-side authentication flow.
 module Yesod.Auth.Facebook.ServerSide
@@ -50,45 +52,46 @@ authFacebook :: (YesodAuth site, YF.YesodFacebook site)
 authFacebook perms = AuthPlugin "fb" dispatch login
   where
     -- Get the URL in facebook.com where users are redirected to.
-    getRedirectUrl :: YF.YesodFacebook site => (Route Auth -> Text) -> HandlerT site IO Text
+    getRedirectUrl :: YF.YesodFacebook site => (Route Auth -> Text) -> AuthHandler site Text
     getRedirectUrl render =
-        YF.runYesodFbT $ FB.getUserAccessTokenStep1 (render proceedR) perms
+        liftSubHandler $ YF.runYesodFbT $ FB.getUserAccessTokenStep1 (render proceedR) perms
     proceedR = PluginR "fb" ["proceed"]
 
     dispatch :: (YesodAuth site, YF.YesodFacebook site) =>
-                Text -> [Text] -> HandlerT Auth (HandlerT site IO) TypedContent
+                Text -> [Text] -> AuthHandler site TypedContent
     -- Redirect the user to Facebook.
     dispatch "GET" ["login"] = do
-        ur <- getUrlRender
-        lift $ do
-          y <- getYesod
-          when (redirectToReferer y) setUltDestReferer
-          redirect =<< getRedirectUrl ur
+        -- ur <- getUrlRender
+        ur <- undefined
+        y <- getYesod
+        when (redirectToReferer y) setUltDestReferer
+        redirect =<< getRedirectUrl ur
     -- Take Facebook's code and finish authentication.
     dispatch "GET" ["proceed"] = do
-        render <- getUrlRender
+        -- render <- getUrlRender
+        render <- undefined
         query  <- queryString <$> waiRequest
         let proceedUrl = render proceedR
             query' = [(a,b) | (a, Just b) <- query]
-        lift $ do
-          token <- YF.runYesodFbT $ FB.getUserAccessTokenStep2 proceedUrl query'
-          setUserAccessToken token
-          setCredsRedirect (createCreds token)
+        token <- liftSubHandler $ YF.runYesodFbT $ FB.getUserAccessTokenStep2 proceedUrl query'
+        setUserAccessToken token
+        setCredsRedirect (createCreds token)
     -- Logout the user from our site and from Facebook.
     dispatch "GET" ["logout"] = do
-        y      <- lift getYesod
-        mtoken <- lift getUserAccessToken
-        when (redirectToReferer y) (lift setUltDestReferer)
+        y      <- getYesod
+        mtoken <- getUserAccessToken
+        when (redirectToReferer y) (setUltDestReferer)
 
         -- Facebook doesn't redirect back to our chosen address
         -- when the user access token is invalid, so we need to
         -- check its validity before anything else.
-        valid <- maybe (return False) (lift . YF.runYesodFbT . FB.isValid) mtoken
+        valid <- maybe (return False) (YF.runYesodFbT . FB.isValid) mtoken
 
         case (valid, mtoken) of
           (True, Just token) -> do
-            render <- getUrlRender
-            dest <- lift $ YF.runYesodFbT $ FB.getUserLogoutUrl token (render $ PluginR "fb" ["kthxbye"])
+            -- render <- getUrlRender
+            render <- undefined
+            dest <- YF.runYesodFbT $ FB.getUserLogoutUrl token (render $ PluginR "fb" ["kthxbye"])
             redirect dest
           _ -> dispatch "GET" ["kthxbye"]
     -- Finish the logout procedure.  Unfortunately we have to
@@ -97,7 +100,7 @@ authFacebook perms = AuthPlugin "fb" dispatch login
     -- LogoutR since it would otherwise call setUltDestReferrer
     -- again.
     dispatch "GET" ["kthxbye"] =
-        lift $ do
+        do
           m <- getYesod
           deleteSession "_ID"
           deleteUserAccessToken
@@ -111,10 +114,11 @@ authFacebook perms = AuthPlugin "fb" dispatch login
              (Route Auth -> Route site)
           -> WidgetT site IO ()
     login tm = do
-        ur <- getUrlRender
-        redirectUrl <- handlerToWidget $ getRedirectUrl (ur . tm)
-        [whamlet|<a href="#{redirectUrl}">_{Msg.Facebook}
-|]
+--         ur <- getUrlRender
+--         redirectUrl <- handlerToWidget $ getRedirectUrl (ur . tm)
+--         [whamlet|<a href="#{redirectUrl}">_{Msg.Facebook}
+-- |]
+           undefined
 
 
 -- | Create an @yesod-auth@'s 'Creds' for a given
