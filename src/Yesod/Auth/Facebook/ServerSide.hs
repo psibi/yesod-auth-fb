@@ -63,15 +63,16 @@ authFacebook perms = AuthPlugin "fb" dispatch login
     dispatch "GET" ["login"] = do
         -- ur <- getUrlRender
         ur <- undefined
+        tm <- getRouteToParent
         y <- getYesod
         when (redirectToReferer y) setUltDestReferer
         redirect =<< getRedirectUrl ur
     -- Take Facebook's code and finish authentication.
     dispatch "GET" ["proceed"] = do
-        -- render <- getUrlRender
-        render <- undefined
+        render <- getUrlRender
+        tm <- getRouteToParent
         query  <- queryString <$> waiRequest
-        let proceedUrl = render proceedR
+        let proceedUrl = render $ tm proceedR
             query' = [(a,b) | (a, Just b) <- query]
         token <- liftSubHandler $ YF.runYesodFbT $ FB.getUserAccessTokenStep2 proceedUrl query'
         setUserAccessToken token
@@ -89,9 +90,9 @@ authFacebook perms = AuthPlugin "fb" dispatch login
 
         case (valid, mtoken) of
           (True, Just token) -> do
-            -- render <- getUrlRender
-            render <- undefined
-            dest <- YF.runYesodFbT $ FB.getUserLogoutUrl token (render $ PluginR "fb" ["kthxbye"])
+            render <- getUrlRender
+            tm <- getRouteToParent
+            dest <- YF.runYesodFbT $ FB.getUserLogoutUrl token (render $ tm $ PluginR "fb" ["kthxbye"])
             redirect dest
           _ -> dispatch "GET" ["kthxbye"]
     -- Finish the logout procedure.  Unfortunately we have to
