@@ -1,4 +1,5 @@
 {-#LANGUAGE RankNTypes#-}
+{-#LANGUAGE ScopedTypeVariables#-}
 
 -- | @yesod-auth@ authentication plugin using Facebook's
 -- client-side authentication flow.  You may see a demo at
@@ -384,8 +385,8 @@ authFacebookClientSide =
     dispatch "GET" ["login", "go", perms] = do
       -- Redirect the user to the server-side flow login url.
       y  <- getYesod
-      ur <- getUrlRender
-      tm <- getRouteToParent
+      (ur :: Route site -> FB.RedirectUrl) <- getUrlRender
+      (tm :: Route Auth -> Route site) <- getRouteToParent
       when (redirectToReferer y) setUltDestReferer
       let redirectTo = ur $ tm $ fbcsR ["login", "back"]
           uncommas "" = []
