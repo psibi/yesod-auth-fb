@@ -52,21 +52,20 @@ authFacebook :: (YesodAuth site, YF.YesodFacebook site)
 authFacebook perms = AuthPlugin "fb" dispatch login
   where
     -- Get the URL in facebook.com where users are redirected to.
-    getRedirectUrl :: YF.YesodFacebook site => (Route Auth -> Text) -> AuthHandler site Text
-    getRedirectUrl render =
-        liftSubHandler $ YF.runYesodFbT $ FB.getUserAccessTokenStep1 (render proceedR) perms
+    getRedirectUrl :: YF.YesodFacebook site => (Route site -> Text) -> (Route Auth -> Route site) -> AuthHandler site Text
+    getRedirectUrl render proute =
+        YF.runYesodFbT $ FB.getUserAccessTokenStep1 (render $ proute proceedR) perms
     proceedR = PluginR "fb" ["proceed"]
 
     dispatch :: (YesodAuth site, YF.YesodFacebook site) =>
                 Text -> [Text] -> AuthHandler site TypedContent
     -- Redirect the user to Facebook.
     dispatch "GET" ["login"] = do
-        -- ur <- getUrlRender
-        ur <- undefined
+        ur <- getUrlRender
         tm <- getRouteToParent
         y <- getYesod
         when (redirectToReferer y) setUltDestReferer
-        redirect =<< getRedirectUrl ur
+        redirect =<< getRedirectUrl ur tm
     -- Take Facebook's code and finish authentication.
     dispatch "GET" ["proceed"] = do
         render <- getUrlRender
