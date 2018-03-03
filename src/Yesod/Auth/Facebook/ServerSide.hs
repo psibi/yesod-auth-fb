@@ -112,13 +112,13 @@ authFacebook perms = AuthPlugin "fb" dispatch login
     -- Small widget for multiple login websites.
     login :: (YesodAuth site, YF.YesodFacebook site) =>
              (Route Auth -> Route site)
-          -> WidgetT site IO ()
+          -> WidgetFor site ()
     login tm = do
---         ur <- getUrlRender
---         redirectUrl <- handlerToWidget $ getRedirectUrl (ur . tm)
---         [whamlet|<a href="#{redirectUrl}">_{Msg.Facebook}
--- |]
-           undefined
+        ur <- getUrlRender
+        redirectUrl <- handlerToWidget $ YF.runYesodFbT $ FB.getUserAccessTokenStep1 (ur $ tm proceedR) perms
+        [whamlet|<a href="#{redirectUrl}">_{Msg.Facebook}
+    |]
+
 
 
 -- | Create an @yesod-auth@'s 'Creds' for a given
