@@ -5,13 +5,11 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 import Data.Text (Text)
-import Network.HTTP.Client.Conduit (newManager, Manager)
 import Yesod
 import Yesod.Auth
 import Yesod.Facebook
 import Yesod.Auth.Facebook.ServerSide
 import Facebook (Credentials(..))
-import Network.HTTP.Client.TLS (tlsManagerSettings)
 
 fbclientId :: Text
 fbclientId = "sample_fb_client_id"
@@ -19,9 +17,8 @@ fbclientId = "sample_fb_client_id"
 fbclientSecret :: Text
 fbclientSecret = "sample_fb_secret"
 
-data App = App
-  { httpManager :: Manager
-  }
+data App =
+  App
 
 mkYesod
   "App"
@@ -35,7 +32,6 @@ instance Yesod App where
 
 instance YesodFacebook App where
   fbCredentials _ = Credentials "yesod" fbclientId fbclientSecret
-  fbHttpManager = httpManager
 
 instance YesodAuth App where
   type AuthId App = Text
@@ -43,9 +39,6 @@ instance YesodAuth App where
   loginDest _ = HomeR
   logoutDest _ = HomeR
   authPlugins _ = [authFacebook ["user_about_me", "email"]]
-  authHttpManager = do
-    app <- getYesod
-    return $ httpManager app
   -- The default maybeAuthId assumes a Persistent database. We're going for a
   -- simpler AuthId, so we'll just do a direct lookup in the session.
   maybeAuthId = lookupSession "_ID"
@@ -70,5 +63,4 @@ getHomeR = do
 
 main :: IO ()
 main = do
-  man <- newManager
-  warp 3000 $ App man
+  warp 3000 $ App
