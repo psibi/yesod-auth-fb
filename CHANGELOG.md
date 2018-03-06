@@ -1,4 +1,4 @@
-# Version yesod-auth-fb
+# Version 1.9.0
 
 * Supports conduit >= 1.3.0
 * Documentation updated to include demo code.
