@@ -1,3 +1,7 @@
+# Version 1.9.1
+
+* Only pass `code` query param to getUserAccessTokenStep2
+
 # Version 1.9.0
 
 * Supports conduit >= 1.3.0

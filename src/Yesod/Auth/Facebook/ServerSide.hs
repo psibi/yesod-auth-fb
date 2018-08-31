@@ -72,7 +72,7 @@ authFacebook perms = AuthPlugin "fb" dispatch login
         tm <- getRouteToParent
         query  <- queryString <$> waiRequest
         let proceedUrl = render $ tm proceedR
-            query' = [(a,b) | (a, Just b) <- query]
+            query' = [(a,b) | (a, Just b) <- query, a == "code"]
         token <- liftSubHandler $ YF.runYesodFbT $ FB.getUserAccessTokenStep2 proceedUrl query'
         setUserAccessToken token
         setCredsRedirect (createCreds token)
