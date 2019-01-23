@@ -1,5 +1,6 @@
 {-#LANGUAGE RankNTypes#-}
 {-#LANGUAGE ScopedTypeVariables#-}
+{-#LANGUAGE LambdaCase#-}
 
 -- | @yesod-auth@ authentication plugin using Facebook's
 -- client-side authentication flow.  You may see a demo at
@@ -227,6 +228,7 @@ type JavaScriptCall = Text
 --
 -- Minimal complete definition: 'getFbChannelFile'.  (We
 -- recommend implementing 'getFbLanguage' as well.)
+-- class (YesodAuth site, YF.YesodFacebook site, MonadFail site) => YesodAuthFbClientSide site where
 class (YesodAuth site, YF.YesodFacebook site) => YesodAuthFbClientSide site where
   -- | A route that serves Facebook's channel file in the /same/
   -- /subdomain/ as the current request's subdomain.
@@ -520,9 +522,9 @@ getUserAccessTokenFromFbCookie =
         case moldCode of
           Just code' | code == code' -> lift $ do
             -- We have a cached token for this code.
-            Just userId  <- lookupSession sessionUserId
-            Just data_   <- lookupSession sessionToken
-            Just exptime <- lookupSession sessionExpires
+            userId  <- lookupSessionIO sessionUserId
+            data_   <- lookupSessionIO sessionToken
+            exptime <- lookupSessionIO sessionExpires
             return $ FB.UserAccessToken (FB.Id userId) data_ (read $ T.unpack exptime)
           _ -> do
             -- Get access token from Facebook.
@@ -560,3 +562,7 @@ getUserAccessTokenFromFbCookie =
     sessionUserId  = "_FBCSU"
     sessionToken   = "_FBCST"
     sessionExpires = "_FBCSE"
+
+    lookupSessionIO x = lookupSession x >>= \case
+                               Just t -> return t
+                               Nothing ->  liftIO $ fail "lookupSession could not find session"
