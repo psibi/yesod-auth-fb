@@ -2,6 +2,11 @@ yesod-auth-fb
 ---------------
 
 [![Build Status](https://travis-ci.org/psibi/yesod-auth-fb.svg?branch=master)](https://travis-ci.org/psibi/yesod-auth-fb)
+[![Hackage](https://img.shields.io/hackage/v/yesod-auth-fb.svg)](https://hackage.haskell.org/package/yesod-auth-fb)
+[![Stackage
+Nightly](http://stackage.org/package/yesod-auth-fb/badge/nightly)](http://stackage.org/nightly/package/yesod-auth-fb)
+[![Stackage
+LTS](http://stackage.org/package/yesod-auth-fb/badge/lts)](http://stackage.org/lts/package/yesod-auth-fb)
 
 Authentication backend for Yesod using Facebook
 
