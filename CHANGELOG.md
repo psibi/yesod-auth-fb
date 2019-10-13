@@ -1,3 +1,7 @@
+# Unreleased
+
+* Relax bounds for latest lts
+
 # Version 1.9.1.0
 
 * Compiles for GHC 8.6 now
