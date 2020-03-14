@@ -1,3 +1,7 @@
+# Version 1.10.1
+
+* Relex constraints to use new version of fb
+
 # Version 1.10.0
 
 * Relax bounds for latest lts
