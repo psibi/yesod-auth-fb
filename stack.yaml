@@ -1,8 +1,8 @@
-resolver: nightly-2020-03-01
+resolver: lts-15.2
 
 packages:
 - '.'
 
 extra-deps:
-- ../fb
-- ../yesod-fb
+- fb-2.1.1
+- yesod-fb-0.6.1
