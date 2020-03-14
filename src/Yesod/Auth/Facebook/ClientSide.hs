@@ -380,7 +380,7 @@ authFacebookClientSide =
       etoken <- getUserAccessTokenFromFbCookie
       case etoken of
         Right token -> setCredsRedirect (createCreds token)
-        Left msg -> fail msg
+        Left msg -> liftIO $ fail msg
 
     -- Login routes used to forcefully require the user to login.
     dispatch "GET" ["login", "go"] = dispatch "GET" ["login", "go", ""]
@@ -407,7 +407,7 @@ authFacebookClientSide =
       -- flimsy and sometimes the user landed on a blank page due
       -- to race conditions.
       ur <- getUrlRender
-      tm <- getRouteToParent 
+      tm <- getRouteToParent
       query <- queryString <$> waiRequest
       let proceedUrl = ur $ tm $ fbcsR ["login", "back"]
           query' = [(a,b) | (a, Just b) <- query]

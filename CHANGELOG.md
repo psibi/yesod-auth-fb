@@ -1,6 +1,7 @@
-# Unreleased
+# Version 1.10.0
 
 * Relax bounds for latest lts
+* Upper bounds for fb, yesdod-fb etc.
 
 # Version 1.9.1.0
 

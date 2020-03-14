@@ -7,6 +7,17 @@ cache:
   - "$HOME/.stack"
 matrix:
   include:
+  - env: BUILD=cabal GHCVER=8.8.3 CABALVER=2.4 HAPPYVER=1.19.5 ALEXVER=3.1.7
+    compiler: ": #GHC 8.8.3"
+    addons:
+      apt:
+        packages:
+        - cabal-install-2.4
+        - ghc-8.8.3
+        - happy-1.19.5
+        - alex-3.1.7
+        sources:
+        - hvr-ghc
   - env: BUILD=cabal GHCVER=8.6.5 CABALVER=2.0 HAPPYVER=1.19.5 ALEXVER=3.1.7
     compiler: ": #GHC 8.6.5"
     addons:
@@ -25,17 +36,6 @@ matrix:
         packages:
         - cabal-install-2.0
         - ghc-8.4.4
-        - happy-1.19.5
-        - alex-3.1.7
-        sources:
-        - hvr-ghc
-  - env: BUILD=cabal GHCVER=8.2.2 CABALVER=2.0 HAPPYVER=1.19.5 ALEXVER=3.1.7
-    compiler: ": #GHC 8.2.2"
-    addons:
-      apt:
-        packages:
-        - cabal-install-2.0
-        - ghc-8.2.2
         - happy-1.19.5
         - alex-3.1.7
         sources:
@@ -129,7 +129,6 @@ script:
       for dir in $PACKAGES
       do
         cd $dir
-        cabal check || [ "$CABALVER" == "1.16" ]
         cabal sdist
         PKGVER=$(cabal info . | awk '{print $2;exit}')
         SRC_TGZ=$PKGVER.tar.gz
