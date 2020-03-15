@@ -1,7 +1,7 @@
 yesod-auth-fb
 ---------------
 
-[![Build Status](https://travis-ci.org/psibi/yesod-auth-fb.svg?branch=master)](https://travis-ci.org/psibi/yesod-auth-fb)
+[![Build Status](https://dev.azure.com/psibi2000/Haskell%20Projects/_apis/build/status/psibi.yesod-auth-fb?branchName=master)](https://dev.azure.com/psibi2000/Haskell%20Projects/_build/latest?definitionId=18&branchName=master)
 [![Hackage](https://img.shields.io/hackage/v/yesod-auth-fb.svg)](https://hackage.haskell.org/package/yesod-auth-fb)
 [![Stackage
 Nightly](http://stackage.org/package/yesod-auth-fb/badge/nightly)](http://stackage.org/nightly/package/yesod-auth-fb)
