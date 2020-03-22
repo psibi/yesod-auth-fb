@@ -81,5 +81,3 @@ getHomeR = do
 main :: IO ()
 main = warp 3000 App
 ```
-
-test
